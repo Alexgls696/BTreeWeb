@@ -147,7 +147,6 @@ public class BTree {
             root = splitNode(root.children.get(0));
             height++;
         }
-
         addRecursive(key, root);
     }
 

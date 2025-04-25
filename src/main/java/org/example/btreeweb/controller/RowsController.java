@@ -101,7 +101,8 @@ public class RowsController {
     @PostMapping("/upload-file")
     public ResponseEntity<Integer> uploadFile(@RequestParam("file") MultipartFile file) throws IOException{
         var rows = getRowsFromFile(file);
-        rows.forEach(row -> rowsService.add(row));
+        rowsService.clear();
+        rows.forEach(rowsService::add);
         return ResponseEntity
                 .ok()
                 .body(rows.size());
