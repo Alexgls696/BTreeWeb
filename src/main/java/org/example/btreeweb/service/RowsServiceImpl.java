@@ -19,7 +19,7 @@ public class RowsServiceImpl implements RowsService {
 
     @Override
     public void remove(String row) {
-
+        rowsRepository.remove(row);
     }
 
     @Override

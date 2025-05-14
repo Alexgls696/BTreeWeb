@@ -1,7 +1,6 @@
 package org.example.btreeweb.repository;
 
 import lombok.RequiredArgsConstructor;
-import org.example.btreeweb.entity.BTree;
 import org.example.btreeweb.exception.FailedToAddKeyException;
 import org.example.btreeweb.exception.FailedToRemoveKeyException;
 import org.springframework.stereotype.Repository;
@@ -25,12 +24,11 @@ public class BTreeRowsRepository implements RowsRepository {
 
     @Override
     public void remove(String row) {
-        throw new FailedToRemoveKeyException("Remove key error");
-       /* try{
-
-        }catch (Exception e){
-            throw new FailedToRemoveKeyException(e.getMessage());
-        }*/
+        try{
+            bTree.remove(row);
+        }catch (Exception exception) {
+            throw new FailedToRemoveKeyException(exception.getMessage());
+        }
     }
 
     @Override

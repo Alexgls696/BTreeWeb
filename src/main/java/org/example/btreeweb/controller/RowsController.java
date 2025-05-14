@@ -60,9 +60,9 @@ public class RowsController {
     public ResponseEntity<?> insert(@RequestBody Map<String, String> params) {
         try {
             rowsService.add(params.get("row"));
-            return ResponseEntity.ok().body(Map.of("status", "success")); // Добавляем тело ответа
+            return ResponseEntity.ok().body(Map.of("status", "success"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage())); // И для ошибки тоже
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -72,7 +72,7 @@ public class RowsController {
             rowsService.remove(params.get("row"));
             return ResponseEntity
                     .ok()
-                    .build();
+                    .body(Map.of("status", "success"));
         }
         String value = "Ключ %s не найден".formatted(params.get("row"));
         throw new NoSuchKeyException(value);

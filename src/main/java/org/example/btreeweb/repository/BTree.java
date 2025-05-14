@@ -1,13 +1,10 @@
-package org.example.btreeweb.entity;
+package org.example.btreeweb.repository;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.stereotype.Component;
-import org.w3c.dom.Node;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -175,6 +172,151 @@ public class BTree {
         }
 
         addRecursive(key, child);
+    }
+
+    public void remove(String key) {
+        if (root == null) {
+            return;
+        }
+
+        removeRecursive(key, root);
+
+        // Если корень стал пустым после удаления
+        if (root.keys.isEmpty() && !root.isLeaf) {
+            root = root.children.get(0);
+            height--;
+        }
+    }
+
+    private void removeRecursive(String key, BTreeNode node) {
+        int keyIndex = findKeyIndex(node, key);
+
+        if (keyIndex < node.keys.size() && compare(key, node.keys.get(keyIndex)) == 0) {
+            // Ключ найден в этом узле
+            if (node.isLeaf) {
+                // Случай 1: Удаление из листа
+                node.keys.remove(keyIndex);
+            } else {
+                // Случай 2: Удаление из внутреннего узла
+                BTreeNode leftChild = node.children.get(keyIndex);
+                BTreeNode rightChild = node.children.get(keyIndex + 1);
+
+                if (leftChild.keys.size() >= DEGREE) {
+                    // Случай 2a: Заменяем на предшественника (максимальный в левом поддереве)
+                    String predecessor = getPredecessor(leftChild);
+                    node.keys.set(keyIndex, predecessor);
+                    removeRecursive(predecessor, leftChild);
+                } else if (rightChild.keys.size() >= DEGREE) {
+                    // Случай 2b: Заменяем на преемника (минимальный в правом поддереве)
+                    String successor = getSuccessor(rightChild);
+                    node.keys.set(keyIndex, successor);
+                    removeRecursive(successor, rightChild);
+                } else {
+                    // Случай 2c: Объединяем детей и удаляемый ключ
+                    mergeNodes(node, keyIndex, leftChild, rightChild);
+                    removeRecursive(key, leftChild);
+                }
+            }
+        } else {
+            // Ключ не найден в этом узле, продолжаем поиск в потомке
+            if (node.isLeaf) {
+                return; // Ключ не существует в дереве
+            }
+
+            boolean isLastChild = (keyIndex == node.children.size() - 1);
+            BTreeNode child = node.children.get(keyIndex);
+
+            // Гарантируем, что у ребенка есть как минимум DEGREE ключей
+            if (child.keys.size() < DEGREE) {
+                // Случай 3: Ребенок имеет недостаточно ключей
+                BTreeNode leftSibling = (keyIndex > 0) ? node.children.get(keyIndex - 1) : null;
+                BTreeNode rightSibling = (!isLastChild) ? node.children.get(keyIndex + 1) : null;
+
+                if (leftSibling != null && leftSibling.keys.size() >= DEGREE) {
+                    // Случай 3a: Заимствуем у левого соседа
+                    borrowFromLeft(node, keyIndex - 1, leftSibling, child);
+                } else if (rightSibling != null && rightSibling.keys.size() >= DEGREE) {
+                    // Случай 3b: Заимствуем у правого соседа
+                    borrowFromRight(node, keyIndex, child, rightSibling);
+                } else {
+                    // Случай 3c: Объединяем с соседом
+                    if (leftSibling != null) {
+                        mergeNodes(node, keyIndex - 1, leftSibling, child);
+                        child = leftSibling;
+                    } else {
+                        mergeNodes(node, keyIndex, child, rightSibling);
+                    }
+                }
+            }
+
+            removeRecursive(key, child);
+        }
+    }
+
+// Вспомогательные методы
+
+    private int findKeyIndex(BTreeNode node, String key) {
+        int index = 0;
+        while (index < node.keys.size() && compare(key, node.keys.get(index)) > 0) {
+            index++;
+        }
+        return index;
+    }
+
+    private String getPredecessor(BTreeNode node) {
+        while (!node.isLeaf) {
+            node = node.children.get(node.children.size() - 1);
+        }
+        return node.keys.get(node.keys.size() - 1);
+    }
+
+    private String getSuccessor(BTreeNode node) {
+        while (!node.isLeaf) {
+            node = node.children.get(0);
+        }
+        return node.keys.get(0);
+    }
+
+    private void borrowFromLeft(BTreeNode parent, int parentKeyIndex, BTreeNode leftSibling, BTreeNode child) {
+        // Перемещаем ключ из родителя в ребенка
+        child.keys.add(0, parent.keys.get(parentKeyIndex));
+
+        // Перемещаем последний ключ левого соседа в родителя
+        parent.keys.set(parentKeyIndex, leftSibling.keys.remove(leftSibling.keys.size() - 1));
+
+        // Если это не листья, перемещаем последнего ребенка левого соседа
+        if (!child.isLeaf) {
+            child.children.add(0, leftSibling.children.remove(leftSibling.children.size() - 1));
+        }
+    }
+
+    private void borrowFromRight(BTreeNode parent, int parentKeyIndex, BTreeNode child, BTreeNode rightSibling) {
+        // Перемещаем ключ из родителя в ребенка
+        child.keys.add(parent.keys.get(parentKeyIndex));
+
+        // Перемещаем первый ключ правого соседа в родителя
+        parent.keys.set(parentKeyIndex, rightSibling.keys.remove(0));
+
+        // Если это не листья, перемещаем первого ребенка правого соседа
+        if (!child.isLeaf) {
+            child.children.add(rightSibling.children.remove(0));
+        }
+    }
+
+    private void mergeNodes(BTreeNode parent, int parentKeyIndex, BTreeNode left, BTreeNode right) {
+        // Добавляем ключ из родителя в левый узел
+        left.keys.add(parent.keys.remove(parentKeyIndex));
+
+        // Добавляем все ключи из правого узла
+        left.keys.addAll(right.keys);
+
+        // Добавляем всех детей из правого узла (если это не листья)
+        if (!left.isLeaf) {
+            left.children.addAll(right.children);
+        }
+
+        // Удаляем правый узел из родителя
+        parent.children.remove(parentKeyIndex + 1);
     }
 
     private void findIfLessThan(String string, BTreeNode node, List<String> list) {
@@ -393,13 +535,6 @@ public class BTree {
             result = remove(key, child);
         }
         return result;
-    }
-    public boolean remove(String key){
-        boolean result = false;
-        if(root==null){
-            return false;
-        }
-        return remove(key,root);
     }
 
     public void clear(){

@@ -1,6 +1,6 @@
 package org.example.btreeweb;
 
-import org.example.btreeweb.entity.BTree;
+import org.example.btreeweb.repository.BTree;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
