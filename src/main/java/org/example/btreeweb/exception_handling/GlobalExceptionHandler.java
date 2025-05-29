@@ -1,6 +1,5 @@
 package org.example.btreeweb.exception_handling;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.btreeweb.exception.FailedToAddKeyException;
 import org.example.btreeweb.exception.FailedToRemoveKeyException;
