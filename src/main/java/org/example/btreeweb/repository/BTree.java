@@ -110,7 +110,6 @@ public class BTree {
             right.addKey(node.keys.get(i));
         }
 
-
         if (!node.isLeaf) {
             for (int i = 0; i <= middleIndex; i++) {
                 left.children.add(node.children.get(i));
@@ -119,9 +118,7 @@ public class BTree {
                 right.children.add(node.children.get(i));
             }
         }
-
         var middleKey = node.keys.get(middleIndex);
-
         var parent = new BTreeNode(false);
         parent.addKey(middleKey);
         parent.children.add(left);
@@ -445,6 +442,8 @@ public class BTree {
         return isExists(str,root);
     }
 
+
+    //В порядке возрастания элементов
     private void getAll(BTreeNode node, List<String>lines) {
         if (node.isLeaf) {
             lines.addAll(node.keys);
@@ -467,6 +466,23 @@ public class BTree {
         return lines;
     }
 
+    public Iterator<String>iterator(){
+        return new Iterator<String>() {
+            private final List<String>lines = getAll();
+
+            private int index = 0;
+            @Override
+            public boolean hasNext() {
+                return index < lines.size();
+            }
+
+            @Override
+            public String next() {
+                return lines.get(index++);
+            }
+        };
+    }
+
 
     private String checkLeftBrother(BTreeNode node){
         String key = null;
@@ -486,32 +502,6 @@ public class BTree {
         return key;
     }
 
-    private boolean remove(String key, BTreeNode node) {
-        boolean result = false;
-        for(int i = 0; i < node.children.size(); i++) {
-            var child = node.children.get(i);
-            if(child.keys.contains(key)){
-                if(child.keys.size() >= DEGREE){
-                    result = child.keys.remove(key);
-                }else{
-                    String brotherKey = checkLeftBrother(node.children.get(i-1));
-                    if(brotherKey==null){
-                        brotherKey = checkRightBrother(node.children.get(i+1));
-                    }
-                    if(brotherKey==null){ //Если оба брата не имеют достаточного числа ключей
-                        String parentKey = node.keys.get(i-1);
-                        node.keys.remove(i-1);
-
-                    }else{
-                        child.addKey(brotherKey);
-                    }
-                }
-                break;
-            }
-            result = remove(key, child);
-        }
-        return result;
-    }
 
     public void clear(){
         root = null;
